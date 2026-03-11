@@ -1,0 +1,3 @@
+# Status:
+
+🚧 Project initialized
