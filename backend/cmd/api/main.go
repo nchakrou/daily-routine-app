@@ -1,14 +1,28 @@
 package main
 
 import (
+	"daily-routine-backend/internal/db"
+	"daily-routine-backend/internal/server"
 	"fmt"
+	"log"
 	"net/http"
 )
 
-func main() {
-	fmt.Println("server started on http://localhost:8080")
+const (
+	DBPath = "./app.db"
+	Port   = ":8080"
+)
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		panic(err)
+func main() {
+	db, err := db.Init(DBPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	fmt.Println("server started on http://localhost:8080")
+	srv := server.New(db)
+
+	if err := http.ListenAndServe(Port, srv); err != nil {
+		log.Fatal(err)
 	}
 }
