@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"daily-routine-backend/internal/session"
 	"daily-routine-backend/pkg/response"
 	"database/sql"
 	"net/http"
@@ -31,5 +32,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	h.handleLogin(w, r)
 }
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-
+	userId, err := session.Get(r, h.db)
+	if err != nil {
+		response.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	err = session.Delete(w, h.db, userId)
+	if err != nil {
+		response.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	response.Success(w, "logout successful", http.StatusOK)
 }
