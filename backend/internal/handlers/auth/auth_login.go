@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"daily-routine-backend/internal/session"
 	"daily-routine-backend/pkg/response"
 	"database/sql"
 	"encoding/json"
@@ -26,7 +27,8 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var password string
-	err := h.db.QueryRow("SELECT password FROM users WHERE email = ?", req.Email).Scan(&password)
+	var userId int
+	err := h.db.QueryRow("SELECT password, id FROM users WHERE email = ?", req.Email).Scan(&password, &userId)
 	if err == sql.ErrNoRows {
 		response.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
@@ -37,6 +39,10 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(req.Password)); err != nil {
 		response.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+	if err := session.Create(w, h.db, userId); err != nil {
+		response.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	response.Success(w, "login successful", http.StatusOK)
