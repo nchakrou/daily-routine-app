@@ -13,3 +13,10 @@ func Success(w http.ResponseWriter, message string, code int) {
 		log.Printf("failed to encode success response: %v", err)
 	}
 }
+func JSON(w http.ResponseWriter, data any, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("failed to encode JSON response: %v", err)
+	}
+}
