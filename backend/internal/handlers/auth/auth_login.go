@@ -61,5 +61,3 @@ func validateLoginReq(req *LoginRequest) map[string]string {
 	}
 	return errs
 }
-
-
