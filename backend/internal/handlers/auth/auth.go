@@ -5,6 +5,7 @@ import (
 	"daily-routine-backend/internal/session"
 	"daily-routine-backend/pkg/response"
 	"database/sql"
+	"log"
 	"net/http"
 )
 
@@ -17,8 +18,18 @@ func New(db *sql.DB) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodPost {
+
 		response.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		log.Println("method not allowed", r.Method)
 		return
 	}
 
@@ -28,6 +39,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		response.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		log.Println("method not allowed")
 		return
 	}
 	h.handleLogin(w, r)

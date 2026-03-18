@@ -3,6 +3,7 @@ package auth
 import (
 	"daily-routine-backend/pkg/response"
 	"encoding/json"
+	"log"
 	"net/http"
 	"regexp"
 	"time"
@@ -27,11 +28,14 @@ func (h *AuthHandler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, "bad request", http.StatusBadRequest)
+		log.Println("bad request", err)
 		return
 	}
+	log.Println("request", req)
 	err := validateRegisterReq(&req)
 	if err != nil {
 		response.MultiError(w, err, http.StatusBadRequest)
+		log.Println("validation error", err)
 		return
 	}
 	if req.Username == "" {
@@ -41,21 +45,26 @@ func (h *AuthHandler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		req.Avatar = "default.png"
 	}
 	exists := false
-	if err := h.db.QueryRow("SELECT * FROM users WHERE email = ?", req.Email).Scan(&exists); err != nil {
+	log.Println("email", req.Email)
+	if err := h.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", req.Email).Scan(&exists); err != nil {
 		response.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("register: check email exists: %v", err)
 		return
 	}
 	if exists {
 		response.Error(w, "email already exists", http.StatusBadRequest)
+		log.Println("email already exists")
 		return
 	}
 	hashedPassword, errr := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if errr != nil {
 		response.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Println(" bcrypt error", errr)
 		return
 	}
-	if _, err := h.db.Exec("INSERT INTO users (first_name, last_name, email, password, date_of_birth, username, avatar, about) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", req.FirstName, req.LastName, req.Email, hashedPassword, req.DateOfBirth, req.Username, req.Avatar, req.About); err != nil {
+	if _, err := h.db.Exec("INSERT INTO users (firstname, lastname, email, password, date_of_birth, username, avatar, about_me) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", req.FirstName, req.LastName, req.Email, hashedPassword, req.DateOfBirth, req.Username, req.Avatar, req.About); err != nil {
 		response.Error(w, "failed to register user", http.StatusInternalServerError)
+		log.Println(" db error", err)
 		return
 	}
 	response.Success(w, "user registered successfully", http.StatusCreated)
